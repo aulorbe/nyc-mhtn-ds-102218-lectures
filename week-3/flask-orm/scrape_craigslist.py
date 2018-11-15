@@ -1,24 +1,21 @@
 import requests
 from bs4 import BeautifulSoup
-import re
 from listing import Listing
+import re
 import pdb
-
-
 
 class ListingBuilder:
     def run(self):
         cl = CraigsListScraper()
-        listings = []
         cl.webpage_html()
+        listings = []
         for listing_html in cl.listings_html():
             parser = ListingParser(listing_html)
             listing = Listing(title = parser.title(), housing = parser.housing(), neighborhood = parser.neighborhood(), price = parser.price())
             listings.append(listing)
         return listings
 
-
-class CraigsListScraper: # he created this class first
+class CraigsListScraper:
     def webpage_html(self, url = 'https://newyork.craigslist.org/search/brk/aap'):
         craigslist_request = requests.get(url)
         self.craigslist_html = craigslist_request.text
@@ -26,7 +23,7 @@ class CraigsListScraper: # he created this class first
 
     def listings_html(self, craigslist_html = None):
         craigslist_html = craigslist_html or self.craigslist_html
-        craigslist_soup = BeautifulSoup(craigslist_html)
+        craigslist_soup = BeautifulSoup(craigslist_html, 'html.parser')
         listings =  craigslist_soup.findAll('li', {'class':"result-row"})
         self.listings = listings
         return self.listings
@@ -48,7 +45,8 @@ class ListingParser:
 
     def price(self, listings = None):
         price = self.parse(self.listing_html, 'price')
-        return int(price[1:])
+        if price:
+            return int(price[1:])
 
     def parse(self, listing_html, criteria):
         result = listing_html.find(class_=re.compile(r'.*%s' % criteria))
